@@ -3,6 +3,8 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,12 +19,19 @@ func NewAuthController() *AuthController {
 	return &AuthController{}
 }
 
-var tokenKey = []byte("surpriselySecretDuaarrrrr...")
+var tokenKey = []byte(os.Getenv("APP_KEY"))
 
 func (controller AuthController) Login(ctx *fiber.Ctx) error {
+	tokenExpireString := os.Getenv("TOKEN_EXPIRE")
+	tokenExpireInt, err := strconv.Atoi(tokenExpireString)
+	if err != nil {
+		tokenExpireInt = 3600
+	}
+	tokenExpire := time.Duration(tokenExpireInt) * time.Second
+
 	tokenData := jwt.MapClaims{
 		model.TokenClaimUserID: 10,
-		model.TokenClaimExp:    time.Now().Add(30 * time.Minute).Unix(),
+		model.TokenClaimExp:    time.Now().Add(tokenExpire).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tokenData)
 	tokenStr, err := token.SignedString(tokenKey)
